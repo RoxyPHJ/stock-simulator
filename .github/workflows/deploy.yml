@@ -1,0 +1,68 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ────────────────────────────────────────────────────────
+  # 1. CI — 빌드 검증 (PR 포함 모든 push에서 실행)
+  # ────────────────────────────────────────────────────────
+  build:
+    name: Build check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
+
+      - name: Frontend — install & build
+        working-directory: frontend
+        run: npm ci && npm run build
+
+      - name: Backend — install
+        working-directory: backend
+        run: npm ci
+
+      # Docker 이미지 빌드 가능 여부 검증 (push는 하지 않음)
+      - name: Backend — Docker build check
+        run: docker build -t stock-simulator-backend ./backend
+
+  # ────────────────────────────────────────────────────────
+  # 2. CD — 실 배포 (main 브랜치 push 시에만 실행)
+  # ────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 프론트엔드 → Vercel
+      # 필요 Secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+      - name: Deploy frontend → Vercel
+        working-directory: frontend
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: npx vercel --prod --yes --token ${{ secrets.VERCEL_TOKEN }}
+
+      # 백엔드 → Render (Deploy Hook URL로 재빌드 트리거)
+      # 필요 Secrets: RENDER_DEPLOY_HOOK_URL
+      - name: Deploy backend → Render
+        run: curl -fsSX POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"

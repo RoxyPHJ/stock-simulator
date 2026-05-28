@@ -1,0 +1,17 @@
+# 환경 변수 — 절대 커밋 금지
+.env
+.env.local
+.env.*.local
+
+# 의존성
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# 빌드 산출물
+frontend/build/
+backend/dist/
+
+# 기타
+.DS_Store
+*.log
