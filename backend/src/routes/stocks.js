@@ -11,7 +11,9 @@ router.get('/search', async (req, res) => {
     const { data } = await axios.get(AV_BASE, {
       params: { function: 'SYMBOL_SEARCH', keywords: q, apikey: process.env.ALPHA_VANTAGE_API_KEY },
     });
-    console.log('[AV search raw]', JSON.stringify(data));
+    if (data.Information || data.Note) {
+      return res.status(429).json({ error: 'API 호출 한도 초과. 내일 다시 시도해주세요.' });
+    }
     res.json(data.bestMatches ?? []);
   } catch (err) {
     console.error('[AV search error]', err.message);
