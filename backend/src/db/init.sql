@@ -24,3 +24,10 @@ CREATE TABLE IF NOT EXISTS transactions (
   price      NUMERIC(12, 4) NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Alpha Vantage API 응답 캐시 (캔들 데이터 1시간 보관)
+CREATE TABLE IF NOT EXISTS api_cache (
+  key        VARCHAR(255) PRIMARY KEY,
+  data       JSONB        NOT NULL,
+  expires_at TIMESTAMPTZ  NOT NULL
+);
