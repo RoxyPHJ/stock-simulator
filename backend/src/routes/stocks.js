@@ -11,8 +11,10 @@ router.get('/search', async (req, res) => {
     const { data } = await axios.get(AV_BASE, {
       params: { function: 'SYMBOL_SEARCH', keywords: q, apikey: process.env.ALPHA_VANTAGE_API_KEY },
     });
+    console.log('[AV search raw]', JSON.stringify(data));
     res.json(data.bestMatches ?? []);
-  } catch {
+  } catch (err) {
+    console.error('[AV search error]', err.message);
     res.status(500).json({ error: 'Failed to search stocks' });
   }
 });
