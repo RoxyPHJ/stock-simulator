@@ -14,9 +14,12 @@ router.get('/search', async (req, res) => {
   if (!q) return res.status(400).json({ error: 'q is required' });
 
   try {
+    const key = process.env.ALPHA_VANTAGE_API_KEY;
+    console.log('[search] using key:', key?.slice(0, 4), '/ raw AV →');
     const { data } = await axios.get(AV_BASE, {
-      params: { function: 'SYMBOL_SEARCH', keywords: q, apikey: process.env.ALPHA_VANTAGE_API_KEY },
+      params: { function: 'SYMBOL_SEARCH', keywords: q, apikey: key },
     });
+    console.log('[search] AV response:', JSON.stringify(data).slice(0, 120));
     if (isRateLimited(data)) return res.status(429).json({ error: 'API 호출 한도 초과. 내일 다시 시도해주세요.' });
     res.json(data.bestMatches ?? []);
   } catch {
