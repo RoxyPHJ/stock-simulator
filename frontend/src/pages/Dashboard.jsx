@@ -1,21 +1,46 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getPortfolio, getTransactions } from '../api';
+import { getPortfolio, getTransactions, getQuote } from '../api';
 
 export default function Dashboard() {
   const [portfolio,    setPortfolio]    = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [prices,       setPrices]       = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
-    getPortfolio()   .then(r => setPortfolio(r.data))   .catch(() => {});
+    getPortfolio().then(r => setPortfolio(r.data)).catch(() => {});
     getTransactions().then(r => setTransactions(r.data)).catch(() => {});
   }, []);
+
+  // 보유 종목 현재가 병렬 조회
+  useEffect(() => {
+    if (!portfolio?.holdings?.length) return;
+    Promise.all(
+      portfolio.holdings.map(h =>
+        getQuote(h.symbol)
+          .then(r => ({ symbol: h.symbol, price: r.data.price }))
+          .catch(() => null)
+      )
+    ).then(results => {
+      const map = {};
+      results.forEach(r => { if (r) map[r.symbol] = r.price; });
+      setPrices(map);
+    });
+  }, [portfolio]);
 
   function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     navigate('/login');
+  }
+
+  function profitInfo(h) {
+    const cur = prices[h.symbol];
+    if (!cur) return null;
+    const amount = (cur - Number(h.avg_price)) * h.quantity;
+    const rate   = ((cur - Number(h.avg_price)) / Number(h.avg_price)) * 100;
+    return { amount, rate };
   }
 
   if (!portfolio) return <div className="loading">로딩 중…</div>;
@@ -42,16 +67,34 @@ export default function Dashboard() {
         ) : (
           <table>
             <thead>
-              <tr><th>종목</th><th>수량</th><th>평균단가</th></tr>
+              <tr>
+                <th>종목</th>
+                <th>수량</th>
+                <th>평균단가</th>
+                <th>현재가</th>
+                <th>수익금</th>
+                <th>수익률</th>
+              </tr>
             </thead>
             <tbody>
-              {portfolio.holdings.map(h => (
-                <tr key={h.symbol}>
-                  <td><Link to={`/market?symbol=${h.symbol}`}>{h.symbol}</Link></td>
-                  <td>{h.quantity.toLocaleString()}</td>
-                  <td>${Number(h.avg_price).toLocaleString()}</td>
-                </tr>
-              ))}
+              {portfolio.holdings.map(h => {
+                const info = profitInfo(h);
+                const isPos = info?.amount >= 0;
+                return (
+                  <tr key={h.symbol}>
+                    <td><Link to={`/market?symbol=${h.symbol}`}>{h.symbol}</Link></td>
+                    <td>{h.quantity.toLocaleString()}</td>
+                    <td>${Number(h.avg_price).toLocaleString()}</td>
+                    <td>{prices[h.symbol] ? `$${prices[h.symbol].toLocaleString()}` : '—'}</td>
+                    <td className={info ? (isPos ? 'up' : 'down') : ''}>
+                      {info ? `${isPos ? '+' : ''}$${info.amount.toFixed(2)}` : '—'}
+                    </td>
+                    <td className={info ? (isPos ? 'up' : 'down') : ''}>
+                      {info ? `${isPos ? '+' : ''}${info.rate.toFixed(2)}%` : '—'}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
