@@ -132,7 +132,11 @@ export default function Market() {
 
       {symbol && !loading && (
         <div className="trade-row">
-          <input type="number" min="1" value={qty} onChange={e => setQty(e.target.value)} />
+          <div className="qty-control">
+            <button className="btn-qty" onClick={() => setQty(q => Math.max(1, Number(q) - 1))}>−</button>
+            <input type="number" min="1" value={qty} onChange={e => setQty(e.target.value)} />
+            <button className="btn-qty" onClick={() => setQty(q => Number(q) + 1)}>+</button>
+          </div>
           <button className="btn-buy"  onClick={() => handleTrade('BUY')}>매수</button>
           <button className="btn-sell" onClick={() => handleTrade('SELL')}>매도</button>
           {msg && <span className="trade-msg">{msg}</span>}

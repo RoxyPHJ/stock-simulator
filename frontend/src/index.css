@@ -166,7 +166,43 @@ th { color: #8b949e; font-weight: 500; }
 .down { color: #f85149; }
 
 .trade-row { display: flex; align-items: center; gap: 12px; margin-top: 20px; }
-.trade-row input { width: 80px; text-align: right; }
+
+.qty-control {
+  display: flex;
+  align-items: center;
+}
+.qty-control input {
+  width: 64px;
+  text-align: left;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  -moz-appearance: textfield;
+}
+.qty-control input::-webkit-inner-spin-button,
+.qty-control input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
+.btn-qty {
+  width: 32px;
+  height: 38px;
+  background: linear-gradient(to bottom, #2d333b, #1c2128);
+  border: 1px solid #444c56;
+  color: #c9d1d9;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  box-shadow: 0 3px 0 #0d1117, inset 0 1px 0 rgba(255,255,255,0.07);
+  transition: box-shadow 80ms, transform 80ms;
+}
+.btn-qty:first-child { border-radius: 6px 0 0 6px; }
+.btn-qty:last-child  { border-radius: 0 6px 6px 0; }
+.btn-qty:hover { background: linear-gradient(to bottom, #373e47, #2d333b); }
+.btn-qty:active {
+  box-shadow: none;
+  transform: translateY(2px);
+}
 
 .btn-buy {
   padding: 8px 20px;
