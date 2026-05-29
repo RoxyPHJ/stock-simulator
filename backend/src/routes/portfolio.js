@@ -2,6 +2,7 @@ const router = require('express').Router();
 const axios = require('axios');
 const { pool } = require('../db');
 const auth = require('../middleware/auth');
+const { mockQuote } = require('../mock');
 
 router.use(auth);
 
@@ -10,7 +11,12 @@ async function fetchPrice(symbol) {
     params: { function: 'GLOBAL_QUOTE', symbol, apikey: process.env.ALPHA_VANTAGE_API_KEY },
   });
   const price = parseFloat(data['Global Quote']?.['05. price']);
-  if (!price) throw new Error(`Symbol not found: ${symbol}`);
+  if (!price) {
+    // rate limit 또는 미지원 종목 → mock 가격 사용
+    const mock = mockQuote(symbol);
+    if (mock) return mock.price;
+    throw new Error(`Symbol not found: ${symbol}`);
+  }
   return price;
 }
 
