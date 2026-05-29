@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const axios  = require('axios');
 const { pool } = require('../db');
-const { mockSearch, mockQuote, mockCandles } = require('../mock');
+const { mockSearch, mockQuote, getOrUpdateMockCandles } = require('../mock');
 
 const AV_BASE = 'https://www.alphavantage.co/query';
 
@@ -55,14 +55,14 @@ router.get('/:symbol/candles', async (req, res) => {
       params: { function: 'TIME_SERIES_DAILY', symbol: sym, outputsize: 'compact', apikey: process.env.ALPHA_VANTAGE_API_KEY },
     });
 
-    if (isRateLimited(data)) return res.json(mockCandles(sym));
+    if (isRateLimited(data)) return res.json(await getOrUpdateMockCandles(sym, pool));
 
     const series = data['Time Series (Daily)'];
-    if (!series) return res.json(mockCandles(sym));
+    if (!series) return res.json(await getOrUpdateMockCandles(sym, pool));
 
     const candles = toCandles(series);
 
-    // 캐시 저장 (1시간)
+    // 실제 데이터 캐시 저장 (1시간)
     await pool.query(
       `INSERT INTO api_cache (key, data, expires_at)
        VALUES ($1, $2, NOW() + INTERVAL '1 hour')
@@ -72,7 +72,7 @@ router.get('/:symbol/candles', async (req, res) => {
 
     res.json(candles);
   } catch {
-    res.json(mockCandles(sym));
+    res.json(await getOrUpdateMockCandles(sym, pool));
   }
 });
 
