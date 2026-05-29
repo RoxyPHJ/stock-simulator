@@ -1,14 +1,14 @@
 const STOCKS = [
-  { symbol: 'AAPL',  name: 'Apple Inc',               price: 185.50,  change:  1.23  },
-  { symbol: 'MSFT',  name: 'Microsoft Corporation',   price: 420.30,  change: -0.85  },
-  { symbol: 'GOOGL', name: 'Alphabet Inc',             price: 171.20,  change:  2.10  },
-  { symbol: 'AMZN',  name: 'Amazon.com Inc',           price: 184.70,  change:  0.95  },
-  { symbol: 'TSLA',  name: 'Tesla Inc',                price: 177.50,  change: -3.20  },
-  { symbol: 'NVDA',  name: 'NVIDIA Corporation',       price: 875.40,  change: 15.30  },
-  { symbol: 'META',  name: 'Meta Platforms Inc',       price: 478.90,  change:  3.45  },
-  { symbol: 'NFLX',  name: 'Netflix Inc',              price: 648.20,  change: -1.80  },
-  { symbol: 'UBER',  name: 'Uber Technologies Inc',   price:  71.30,  change:  0.65  },
-  { symbol: 'BABA',  name: 'Alibaba Group',            price:  78.50,  change:  0.40  },
+  { symbol: 'AAPL',  name: 'Apple Inc',              price: 185.50 },
+  { symbol: 'MSFT',  name: 'Microsoft Corporation',  price: 420.30 },
+  { symbol: 'GOOGL', name: 'Alphabet Inc',            price: 171.20 },
+  { symbol: 'AMZN',  name: 'Amazon.com Inc',          price: 184.70 },
+  { symbol: 'TSLA',  name: 'Tesla Inc',               price: 177.50 },
+  { symbol: 'NVDA',  name: 'NVIDIA Corporation',      price: 875.40 },
+  { symbol: 'META',  name: 'Meta Platforms Inc',      price: 478.90 },
+  { symbol: 'NFLX',  name: 'Netflix Inc',             price: 648.20 },
+  { symbol: 'UBER',  name: 'Uber Technologies Inc',  price:  71.30 },
+  { symbol: 'BABA',  name: 'Alibaba Group',           price:  78.50 },
 ];
 
 // ─── Seeded PRNG (mulberry32) ────────────────────────
@@ -138,17 +138,6 @@ function mockSearch(q) {
   }));
 }
 
-function mockQuote(symbol) {
-  const s = STOCKS.find(s => s.symbol === symbol.toUpperCase());
-  if (!s) return null;
-  return {
-    symbol:        s.symbol,
-    price:         s.price,
-    change:        s.change,
-    changePercent: `${((s.change / s.price) * 100).toFixed(2)}%`,
-  };
-}
-
 // 차트 종가와 일치하는 현재가 반환 (DB 마지막 캔들 기준)
 async function getLastMockPrice(symbol, pool) {
   const candles = await getOrUpdateMockCandles(symbol.toUpperCase(), pool);
@@ -163,4 +152,4 @@ async function getLastMockPrice(symbol, pool) {
   };
 }
 
-module.exports = { mockSearch, mockQuote, getOrUpdateMockCandles, getLastMockPrice };
+module.exports = { mockSearch, getOrUpdateMockCandles, getLastMockPrice };
