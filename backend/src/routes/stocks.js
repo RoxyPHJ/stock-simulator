@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const axios  = require('axios');
 const { pool } = require('../db');
+const { mockSearch, mockQuote, mockCandles } = require('../mock');
 
 const AV_BASE = 'https://www.alphavantage.co/query';
 
@@ -14,16 +15,13 @@ router.get('/search', async (req, res) => {
   if (!q) return res.status(400).json({ error: 'q is required' });
 
   try {
-    const key = process.env.ALPHA_VANTAGE_API_KEY;
-    console.log('[search] using key:', key?.slice(0, 4), '/ raw AV →');
     const { data } = await axios.get(AV_BASE, {
-      params: { function: 'SYMBOL_SEARCH', keywords: q, apikey: key },
+      params: { function: 'SYMBOL_SEARCH', keywords: q, apikey: process.env.ALPHA_VANTAGE_API_KEY },
     });
-    console.log('[search] AV response:', JSON.stringify(data).slice(0, 120));
-    if (isRateLimited(data)) return res.status(429).json({ error: 'API 호출 한도 초과. 내일 다시 시도해주세요.' });
+    if (isRateLimited(data)) return res.json(mockSearch(q));
     res.json(data.bestMatches ?? []);
   } catch {
-    res.status(500).json({ error: 'Failed to search stocks' });
+    res.json(mockSearch(q));
   }
 });
 
@@ -41,7 +39,7 @@ function toCandles(timeSeries) {
 }
 
 router.get('/:symbol/candles', async (req, res) => {
-  const sym = req.params.symbol.toUpperCase();
+  const sym      = req.params.symbol.toUpperCase();
   const cacheKey = `candles:${sym}`;
 
   try {
@@ -56,10 +54,11 @@ router.get('/:symbol/candles', async (req, res) => {
     const { data } = await axios.get(AV_BASE, {
       params: { function: 'TIME_SERIES_DAILY', symbol: sym, outputsize: 'compact', apikey: process.env.ALPHA_VANTAGE_API_KEY },
     });
-    if (isRateLimited(data)) return res.status(429).json({ error: 'API 호출 한도 초과. 내일 다시 시도해주세요.' });
+
+    if (isRateLimited(data)) return res.json(mockCandles(sym));
 
     const series = data['Time Series (Daily)'];
-    if (!series) return res.status(404).json({ error: 'No data for symbol' });
+    if (!series) return res.json(mockCandles(sym));
 
     const candles = toCandles(series);
 
@@ -73,17 +72,22 @@ router.get('/:symbol/candles', async (req, res) => {
 
     res.json(candles);
   } catch {
-    res.status(500).json({ error: 'Failed to fetch candles' });
+    res.json(mockCandles(sym));
   }
 });
 
 // ─── 현재가 조회 ─────────────────────────────────────
 router.get('/:symbol', async (req, res) => {
+  const sym = req.params.symbol.toUpperCase();
   try {
     const { data } = await axios.get(AV_BASE, {
-      params: { function: 'GLOBAL_QUOTE', symbol: req.params.symbol, apikey: process.env.ALPHA_VANTAGE_API_KEY },
+      params: { function: 'GLOBAL_QUOTE', symbol: sym, apikey: process.env.ALPHA_VANTAGE_API_KEY },
     });
-    if (isRateLimited(data)) return res.status(429).json({ error: 'API 호출 한도 초과. 내일 다시 시도해주세요.' });
+
+    if (isRateLimited(data)) {
+      const mock = mockQuote(sym);
+      return mock ? res.json(mock) : res.status(404).json({ error: 'Symbol not found' });
+    }
 
     const q = data['Global Quote'];
     if (!q?.['05. price']) return res.status(404).json({ error: 'Symbol not found' });
@@ -95,7 +99,8 @@ router.get('/:symbol', async (req, res) => {
       changePercent: q['10. change percent'],
     });
   } catch {
-    res.status(500).json({ error: 'Failed to fetch quote' });
+    const mock = mockQuote(sym);
+    return mock ? res.json(mock) : res.status(404).json({ error: 'Symbol not found' });
   }
 });
 
