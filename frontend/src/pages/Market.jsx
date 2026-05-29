@@ -123,7 +123,7 @@ export default function Market() {
             {quote.change >= 0 ? '▲' : '▼'} {quote.changePercent}
           </span>
           <button className={`btn-watch ${inWatchlist ? 'active' : ''}`} onClick={handleWatchToggle}>
-            {inWatchlist ? '★ 관심 해제' : '☆ 관심종목'}
+            {inWatchlist ? '★' : '☆'}
           </button>
         </div>
       )}

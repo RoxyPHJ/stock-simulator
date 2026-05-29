@@ -201,3 +201,26 @@ th { color: #8b949e; font-weight: 500; }
 .empty { color: #8b949e; font-size: 14px; padding: 8px 0; }
 
 .tv-lightweight-charts a { display: none !important; }
+
+/* ── Watchlist buttons ──────────────────────────── */
+.btn-watch {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  color: #f1c40f;
+  padding: 0 4px;
+  line-height: 1;
+}
+.btn-watch:hover { opacity: 0.7; }
+
+.btn-watch-remove {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #f85149;
+  padding: 0 4px;
+  line-height: 1;
+}
+.btn-watch-remove:hover { opacity: 0.7; }
