@@ -2,7 +2,7 @@ const router = require('express').Router();
 const axios = require('axios');
 const { pool } = require('../db');
 const auth = require('../middleware/auth');
-const { mockQuote } = require('../mock');
+const { getLastMockPrice } = require('../mock');
 
 router.use(auth);
 
@@ -12,8 +12,8 @@ async function fetchPrice(symbol) {
   });
   const price = parseFloat(data['Global Quote']?.['05. price']);
   if (!price) {
-    // rate limit 또는 미지원 종목 → mock 가격 사용
-    const mock = mockQuote(symbol);
+    // rate limit → 차트와 동일한 DB 기준 마지막 종가 사용
+    const mock = await getLastMockPrice(symbol, pool);
     if (mock) return mock.price;
     throw new Error(`Symbol not found: ${symbol}`);
   }

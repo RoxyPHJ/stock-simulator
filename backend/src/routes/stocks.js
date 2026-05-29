@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const axios  = require('axios');
 const { pool } = require('../db');
-const { mockSearch, mockQuote, getOrUpdateMockCandles } = require('../mock');
+const { mockSearch, getOrUpdateMockCandles, getLastMockPrice } = require('../mock');
 
 const AV_BASE = 'https://www.alphavantage.co/query';
 
@@ -84,13 +84,10 @@ router.get('/:symbol', async (req, res) => {
       params: { function: 'GLOBAL_QUOTE', symbol: sym, apikey: process.env.ALPHA_VANTAGE_API_KEY },
     });
 
-    if (isRateLimited(data)) {
-      const mock = mockQuote(sym);
-      return mock ? res.json(mock) : res.status(404).json({ error: 'Symbol not found' });
-    }
+    if (isRateLimited(data)) return res.json(await getLastMockPrice(sym, pool));
 
     const q = data['Global Quote'];
-    if (!q?.['05. price']) return res.status(404).json({ error: 'Symbol not found' });
+    if (!q?.['05. price']) return res.json(await getLastMockPrice(sym, pool));
 
     res.json({
       symbol:        q['01. symbol'],
@@ -99,8 +96,7 @@ router.get('/:symbol', async (req, res) => {
       changePercent: q['10. change percent'],
     });
   } catch {
-    const mock = mockQuote(sym);
-    return mock ? res.json(mock) : res.status(404).json({ error: 'Symbol not found' });
+    return res.json(await getLastMockPrice(sym, pool));
   }
 });
 

@@ -149,4 +149,18 @@ function mockQuote(symbol) {
   };
 }
 
-module.exports = { mockSearch, mockQuote, getOrUpdateMockCandles };
+// 차트 종가와 일치하는 현재가 반환 (DB 마지막 캔들 기준)
+async function getLastMockPrice(symbol, pool) {
+  const candles = await getOrUpdateMockCandles(symbol.toUpperCase(), pool);
+  const last    = candles[candles.length - 1];
+  const prev    = candles[candles.length - 2];
+  const change  = parseFloat((last.close - prev.close).toFixed(2));
+  return {
+    symbol:        symbol.toUpperCase(),
+    price:         last.close,
+    change,
+    changePercent: `${((change / prev.close) * 100).toFixed(2)}%`,
+  };
+}
+
+module.exports = { mockSearch, mockQuote, getOrUpdateMockCandles, getLastMockPrice };
