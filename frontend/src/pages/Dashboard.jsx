@@ -1,26 +1,25 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getPortfolio, getTransactions, getQuote } from '../api';
+import { getPortfolio, getQuote, getWatchlist, removeWatchlist } from '../api';
 
 export default function Dashboard() {
-  const [portfolio,    setPortfolio]    = useState(null);
-  const [transactions, setTransactions] = useState([]);
-  const [prices,       setPrices]       = useState({});
+  const [portfolio,   setPortfolio]   = useState(null);
+  const [prices,      setPrices]      = useState({});
+  const [watchlist,   setWatchlist]   = useState([]);
+  const [watchPrices, setWatchPrices] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
     getPortfolio().then(r => setPortfolio(r.data)).catch(() => {});
-    getTransactions().then(r => setTransactions(r.data)).catch(() => {});
+    getWatchlist().then(r => setWatchlist(r.data)).catch(() => {});
   }, []);
 
-  // 보유 종목 현재가 병렬 조회
+  // 보유 종목 현재가
   useEffect(() => {
     if (!portfolio?.holdings?.length) return;
     Promise.all(
       portfolio.holdings.map(h =>
-        getQuote(h.symbol)
-          .then(r => ({ symbol: h.symbol, price: r.data.price }))
-          .catch(() => null)
+        getQuote(h.symbol).then(r => ({ symbol: h.symbol, price: r.data.price })).catch(() => null)
       )
     ).then(results => {
       const map = {};
@@ -28,6 +27,25 @@ export default function Dashboard() {
       setPrices(map);
     });
   }, [portfolio]);
+
+  // 관심종목 현재가
+  useEffect(() => {
+    if (!watchlist.length) return;
+    Promise.all(
+      watchlist.map(w =>
+        getQuote(w.symbol).then(r => ({ symbol: w.symbol, data: r.data })).catch(() => null)
+      )
+    ).then(results => {
+      const map = {};
+      results.forEach(r => { if (r) map[r.symbol] = r.data; });
+      setWatchPrices(map);
+    });
+  }, [watchlist]);
+
+  async function handleRemoveWatch(symbol) {
+    await removeWatchlist(symbol).catch(() => {});
+    setWatchlist(prev => prev.filter(w => w.symbol !== symbol));
+  }
 
   function logout() {
     localStorage.removeItem('token');
@@ -51,6 +69,7 @@ export default function Dashboard() {
         <h2>대시보드</h2>
         <nav className="nav">
           <Link to="/market">시장</Link>
+          <Link to="/transactions">거래내역</Link>
           <button onClick={logout}>로그아웃</button>
         </nav>
       </div>
@@ -60,6 +79,7 @@ export default function Dashboard() {
         <strong>{Number(portfolio.balance).toLocaleString()}원</strong>
       </div>
 
+      {/* 보유 종목 */}
       <div className="section">
         <h3>보유 종목</h3>
         {portfolio.holdings.length === 0 ? (
@@ -67,14 +87,7 @@ export default function Dashboard() {
         ) : (
           <table>
             <thead>
-              <tr>
-                <th>종목</th>
-                <th>수량</th>
-                <th>평균단가</th>
-                <th>현재가</th>
-                <th>수익금</th>
-                <th>수익률</th>
-              </tr>
+              <tr><th>종목</th><th>수량</th><th>평균단가</th><th>현재가</th><th>수익금</th><th>수익률</th></tr>
             </thead>
             <tbody>
               {portfolio.holdings.map(h => {
@@ -100,25 +113,33 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* 관심종목 */}
       <div className="section">
-        <h3>최근 거래</h3>
-        {transactions.length === 0 ? (
-          <p className="empty">거래 내역 없음</p>
+        <h3>관심종목</h3>
+        {watchlist.length === 0 ? (
+          <p className="empty">관심종목 없음 — 시장에서 ★ 버튼으로 추가하세요</p>
         ) : (
           <table>
             <thead>
-              <tr><th>일시</th><th>종목</th><th>구분</th><th>수량</th><th>단가</th></tr>
+              <tr><th>종목</th><th>현재가</th><th>등락</th><th></th></tr>
             </thead>
             <tbody>
-              {transactions.map(t => (
-                <tr key={t.id}>
-                  <td>{new Date(t.created_at).toLocaleDateString('ko-KR')}</td>
-                  <td>{t.symbol}</td>
-                  <td className={t.type === 'BUY' ? 'tag-buy' : 'tag-sell'}>{t.type}</td>
-                  <td>{Number(t.quantity).toLocaleString()}</td>
-                  <td>${Number(t.price).toLocaleString()}</td>
-                </tr>
-              ))}
+              {watchlist.map(w => {
+                const q = watchPrices[w.symbol];
+                const isPos = q?.change >= 0;
+                return (
+                  <tr key={w.symbol}>
+                    <td><Link to={`/market?symbol=${w.symbol}`}>{w.symbol}</Link></td>
+                    <td>{q ? `$${q.price.toLocaleString()}` : '—'}</td>
+                    <td className={q ? (isPos ? 'up' : 'down') : ''}>
+                      {q ? `${isPos ? '▲' : '▼'} ${q.changePercent}` : '—'}
+                    </td>
+                    <td>
+                      <button className="btn-watch-remove" onClick={() => handleRemoveWatch(w.symbol)}>✕</button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

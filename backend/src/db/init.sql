@@ -25,6 +25,13 @@ CREATE TABLE IF NOT EXISTS transactions (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS watchlist (
+  id      SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  symbol  VARCHAR(20) NOT NULL,
+  UNIQUE(user_id, symbol)
+);
+
 -- Alpha Vantage API 응답 캐시 (캔들 데이터 1시간 보관)
 CREATE TABLE IF NOT EXISTS api_cache (
   key        VARCHAR(255) PRIMARY KEY,

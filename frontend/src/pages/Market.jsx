@@ -1,18 +1,24 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { searchStocks, getQuote, getCandles, buyStock, sellStock } from '../api';
+import { searchStocks, getQuote, getCandles, buyStock, sellStock, getWatchlist, addWatchlist, removeWatchlist } from '../api';
 import CandleChart from '../components/CandleChart';
 
 export default function Market() {
-  const [searchParams]           = useSearchParams();
-  const [query,   setQuery]      = useState('');
-  const [results, setResults]    = useState([]);
-  const [symbol,  setSymbol]     = useState(searchParams.get('symbol') ?? '');
-  const [quote,   setQuote]      = useState(null);
-  const [candles, setCandles]    = useState([]);
-  const [qty,     setQty]        = useState(1);
-  const [msg,     setMsg]        = useState('');
-  const [loading, setLoading]    = useState(false);
+  const [searchParams]              = useSearchParams();
+  const [query,     setQuery]       = useState('');
+  const [results,   setResults]     = useState([]);
+  const [symbol,    setSymbol]      = useState(searchParams.get('symbol') ?? '');
+  const [quote,     setQuote]       = useState(null);
+  const [candles,   setCandles]     = useState([]);
+  const [qty,       setQty]         = useState(1);
+  const [msg,       setMsg]         = useState('');
+  const [loading,   setLoading]     = useState(false);
+  const [watchlist, setWatchlist]   = useState([]);
+
+  // 관심종목 로드
+  useEffect(() => {
+    getWatchlist().then(r => setWatchlist(r.data.map(w => w.symbol))).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (symbol) loadSymbol(symbol);
@@ -61,11 +67,31 @@ export default function Market() {
     }
   }
 
+  async function handleWatchToggle() {
+    const inWatch = watchlist.includes(symbol);
+    try {
+      if (inWatch) {
+        await removeWatchlist(symbol);
+        setWatchlist(prev => prev.filter(s => s !== symbol));
+      } else {
+        await addWatchlist(symbol);
+        setWatchlist(prev => [...prev, symbol]);
+      }
+    } catch {
+      setMsg('관심종목 처리 실패');
+    }
+  }
+
+  const inWatchlist = watchlist.includes(symbol);
+
   return (
     <div className="page">
       <div className="page-header">
         <h2>시장</h2>
-        <nav className="nav"><Link to="/">대시보드</Link></nav>
+        <nav className="nav">
+          <Link to="/">대시보드</Link>
+          <Link to="/transactions">거래내역</Link>
+        </nav>
       </div>
 
       <form className="search-row" onSubmit={handleSearch}>
@@ -96,6 +122,9 @@ export default function Market() {
           <span className={quote.change >= 0 ? 'up' : 'down'}>
             {quote.change >= 0 ? '▲' : '▼'} {quote.changePercent}
           </span>
+          <button className={`btn-watch ${inWatchlist ? 'active' : ''}`} onClick={handleWatchToggle}>
+            {inWatchlist ? '★ 관심 해제' : '☆ 관심종목'}
+          </button>
         </div>
       )}
 
@@ -103,12 +132,7 @@ export default function Market() {
 
       {symbol && !loading && (
         <div className="trade-row">
-          <input
-            type="number"
-            min="1"
-            value={qty}
-            onChange={e => setQty(e.target.value)}
-          />
+          <input type="number" min="1" value={qty} onChange={e => setQty(e.target.value)} />
           <button className="btn-buy"  onClick={() => handleTrade('BUY')}>매수</button>
           <button className="btn-sell" onClick={() => handleTrade('SELL')}>매도</button>
           {msg && <span className="trade-msg">{msg}</span>}

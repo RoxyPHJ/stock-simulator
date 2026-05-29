@@ -58,3 +58,8 @@ export async function getQuote(symbol) {
 
 // 캔들은 백엔드 PostgreSQL에서 캐싱 (1시간)
 export const getCandles = (symbol) => api.get(`/stocks/${symbol}/candles`);
+
+// ─── Watchlist ───────────────────────────────────────
+export const getWatchlist    = ()       => api.get('/watchlist');
+export const addWatchlist    = (symbol) => api.post('/watchlist', { symbol });
+export const removeWatchlist = (symbol) => api.delete(`/watchlist/${symbol}`);
