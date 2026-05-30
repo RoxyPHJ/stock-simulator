@@ -66,7 +66,10 @@ export default function Dashboard() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>대시보드</h2>
+        <div className="page-title">
+          <h2>대시보드</h2>
+          <span className="disclaimer">실제 가격과는 무관한 모의투자 프로그램입니다</span>
+        </div>
         <nav className="nav">
           <Link to="/market">시장</Link>
           <Link to="/transactions">거래내역</Link>
