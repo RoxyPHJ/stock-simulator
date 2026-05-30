@@ -199,6 +199,26 @@ th { color: #8b949e; font-weight: 500; }
 .up   { color: #3fb950; }
 .down { color: #f85149; }
 
+.market-balance {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 12px 20px;
+  margin-bottom: 12px;
+}
+.market-balance span { color: #8b949e; font-size: 13px; }
+.market-balance strong { font-size: 18px; color: #58a6ff; }
+
+.trade-total {
+  font-size: 15px;
+  font-weight: 600;
+  color: #c9d1d9;
+  min-width: 120px;
+}
+
 .trade-row { display: flex; align-items: center; gap: 12px; margin-top: 20px; }
 
 .qty-control {
