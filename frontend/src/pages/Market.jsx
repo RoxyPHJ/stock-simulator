@@ -150,9 +150,12 @@ export default function Market() {
           <button className={`btn-watch ${inWatchlist ? 'active' : ''}`} onClick={handleWatchToggle}>
             {inWatchlist ? '★' : '☆'}
           </button>
-          <div className="currency-toggle">
-            <button className={currency === 'KRW' ? 'active' : ''} onClick={() => setCurrency('KRW')}>원화</button>
-            <button className={currency === 'USD' ? 'active' : ''} onClick={() => setCurrency('USD')}>달러</button>
+          <div className="rate-toggle-group">
+            <span className="exchange-rate-label">$1 = ₩{Math.round(exchangeRate).toLocaleString()}</span>
+            <div className="currency-toggle">
+              <button className={currency === 'KRW' ? 'active' : ''} onClick={() => setCurrency('KRW')}>원화</button>
+              <button className={currency === 'USD' ? 'active' : ''} onClick={() => setCurrency('USD')}>달러</button>
+            </div>
           </div>
         </div>
       )}

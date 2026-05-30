@@ -81,7 +81,14 @@ export default function Dashboard() {
 
   if (!portfolio) return <div className="loading">로딩 중…</div>;
 
-  const balanceUsd = Math.round(Number(portfolio.balance) / exchangeRate).toLocaleString();
+  const balanceNum    = Number(portfolio.balance);
+  const balanceUsd    = Math.round(balanceNum / exchangeRate).toLocaleString();
+  const holdingsKRW   = portfolio.holdings.reduce((sum, h) => {
+    const cur = prices[h.symbol];
+    return cur ? sum + cur * h.quantity * exchangeRate : sum;
+  }, 0);
+  const totalValue    = Math.round(balanceNum + holdingsKRW);
+  const totalValueUsd = Math.round(totalValue / exchangeRate).toLocaleString();
 
   return (
     <div className="page">
@@ -98,20 +105,32 @@ export default function Dashboard() {
       </div>
 
       <div className="balance-card">
-        <span>예수금</span>
-        <strong>
-          {Number(portfolio.balance).toLocaleString()}원
-          <span className="balance-usd">(${balanceUsd})</span>
-        </strong>
+        <div className="balance-row">
+          <span>계좌총액</span>
+          <strong>
+            {totalValue.toLocaleString()}원
+            <span className="balance-usd">(${totalValueUsd})</span>
+          </strong>
+        </div>
+        <div className="balance-row">
+          <span>예수금</span>
+          <strong className="balance-secondary">
+            {balanceNum.toLocaleString()}원
+            <span className="balance-usd">(${balanceUsd})</span>
+          </strong>
+        </div>
       </div>
 
       {/* 보유 종목 */}
       <div className="section">
         <div className="section-header">
           <h3>보유 종목</h3>
-          <div className="currency-toggle">
-            <button className={currency === 'KRW' ? 'active' : ''} onClick={() => setCurrency('KRW')}>원화</button>
-            <button className={currency === 'USD' ? 'active' : ''} onClick={() => setCurrency('USD')}>달러</button>
+          <div className="rate-toggle-group">
+            <span className="exchange-rate-label">$1 = ₩{Math.round(exchangeRate).toLocaleString()}</span>
+            <div className="currency-toggle">
+              <button className={currency === 'KRW' ? 'active' : ''} onClick={() => setCurrency('KRW')}>원화</button>
+              <button className={currency === 'USD' ? 'active' : ''} onClick={() => setCurrency('USD')}>달러</button>
+            </div>
           </div>
         </div>
         {portfolio.holdings.length === 0 ? (
