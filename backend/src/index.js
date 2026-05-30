@@ -11,6 +11,7 @@ app.use('/auth',      require('./routes/auth'));
 app.use('/stocks',    require('./routes/stocks'));
 app.use('/portfolio', require('./routes/portfolio'));
 app.use('/watchlist', require('./routes/watchlist'));
+app.use('/exchange',  require('./routes/exchange'));
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 

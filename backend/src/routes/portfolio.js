@@ -2,6 +2,7 @@ const router = require('express').Router();
 const { pool } = require('../db');
 const auth = require('../middleware/auth');
 const { getLastMockPrice } = require('../mock');
+const { getExchangeRate } = require('../exchange');
 
 router.use(auth);
 
@@ -52,8 +53,9 @@ router.post('/buy', async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    const price = await fetchPrice(sym);
-    const cost = price * quantity;
+    const price    = await fetchPrice(sym);
+    const rate     = await getExchangeRate();
+    const cost     = price * quantity * rate;   // KRW
 
     const { rows } = await client.query(
       'SELECT balance FROM users WHERE id = $1 FOR UPDATE',
@@ -99,7 +101,9 @@ router.post('/sell', async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    const price = await fetchPrice(sym);
+    const price    = await fetchPrice(sym);
+    const rate     = await getExchangeRate();
+    const proceeds = price * quantity * rate;   // KRW
 
     const { rows } = await client.query(
       'SELECT quantity FROM holdings WHERE user_id = $1 AND symbol = $2 FOR UPDATE',
@@ -107,8 +111,6 @@ router.post('/sell', async (req, res) => {
     );
     if (!rows.length || rows[0].quantity < quantity)
       throw Object.assign(new Error('Insufficient holdings'), { status: 400 });
-
-    const proceeds = price * quantity;
 
     await client.query('UPDATE users SET balance = balance + $1 WHERE id = $2', [proceeds, req.user.id]);
     await client.query(

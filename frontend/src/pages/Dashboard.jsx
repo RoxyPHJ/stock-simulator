@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getPortfolio, getQuote, getWatchlist, removeWatchlist } from '../api';
+import { getPortfolio, getQuote, getWatchlist, removeWatchlist, getExchangeRate } from '../api';
 
 export default function Dashboard() {
-  const [portfolio,   setPortfolio]   = useState(null);
-  const [prices,      setPrices]      = useState({});
-  const [watchlist,   setWatchlist]   = useState([]);
-  const [watchPrices, setWatchPrices] = useState({});
+  const [portfolio,    setPortfolio]    = useState(null);
+  const [prices,       setPrices]       = useState({});
+  const [watchlist,    setWatchlist]    = useState([]);
+  const [watchPrices,  setWatchPrices]  = useState({});
+  const [exchangeRate, setExchangeRate] = useState(1380);
+  const [currency,     setCurrency]     = useState('KRW');
   const navigate = useNavigate();
 
   useEffect(() => {
     getPortfolio().then(r => setPortfolio(r.data)).catch(() => {});
-    getWatchlist().then(r => setWatchlist(r.data)).catch(() => {});
+    getWatchlist().then(r  => setWatchlist(r.data)).catch(() => {});
+    getExchangeRate().then(r => setExchangeRate(r.data.rate)).catch(() => {});
   }, []);
 
   // 보유 종목 현재가
@@ -53,15 +56,32 @@ export default function Dashboard() {
     navigate('/login');
   }
 
+  // USD 가격 → 선택된 통화로 포맷
+  function fmt(usdVal) {
+    if (usdVal == null) return '—';
+    if (currency === 'USD') return `$${Number(usdVal).toLocaleString()}`;
+    return `₩${Math.round(Number(usdVal) * exchangeRate).toLocaleString()}`;
+  }
+
+  // 수익금 포맷 (부호 포함)
+  function fmtProfit(usdAmount) {
+    const sign = usdAmount >= 0 ? '+' : '-';
+    const abs  = Math.abs(usdAmount);
+    if (currency === 'USD') return `${sign}$${abs.toFixed(2)}`;
+    return `${sign}₩${Math.round(abs * exchangeRate).toLocaleString()}`;
+  }
+
   function profitInfo(h) {
     const cur = prices[h.symbol];
     if (!cur) return null;
-    const amount = (cur - Number(h.avg_price)) * h.quantity;
-    const rate   = ((cur - Number(h.avg_price)) / Number(h.avg_price)) * 100;
-    return { amount, rate };
+    const usdAmount = (cur - Number(h.avg_price)) * h.quantity;
+    const pct = ((cur - Number(h.avg_price)) / Number(h.avg_price)) * 100;
+    return { usdAmount, pct };
   }
 
   if (!portfolio) return <div className="loading">로딩 중…</div>;
+
+  const balanceUsd = Math.round(Number(portfolio.balance) / exchangeRate).toLocaleString();
 
   return (
     <div className="page">
@@ -79,12 +99,21 @@ export default function Dashboard() {
 
       <div className="balance-card">
         <span>예수금</span>
-        <strong>{Number(portfolio.balance).toLocaleString()}원</strong>
+        <strong>
+          {Number(portfolio.balance).toLocaleString()}원
+          <span className="balance-usd">(${balanceUsd})</span>
+        </strong>
       </div>
 
       {/* 보유 종목 */}
       <div className="section">
-        <h3>보유 종목</h3>
+        <div className="section-header">
+          <h3>보유 종목</h3>
+          <div className="currency-toggle">
+            <button className={currency === 'KRW' ? 'active' : ''} onClick={() => setCurrency('KRW')}>원화</button>
+            <button className={currency === 'USD' ? 'active' : ''} onClick={() => setCurrency('USD')}>달러</button>
+          </div>
+        </div>
         {portfolio.holdings.length === 0 ? (
           <p className="empty">보유 종목 없음</p>
         ) : (
@@ -95,18 +124,18 @@ export default function Dashboard() {
             <tbody>
               {portfolio.holdings.map(h => {
                 const info = profitInfo(h);
-                const isPos = info?.amount >= 0;
+                const isPos = info?.usdAmount >= 0;
                 return (
                   <tr key={h.symbol}>
                     <td><Link to={`/market?symbol=${h.symbol}`}>{h.symbol}</Link></td>
                     <td>{h.quantity.toLocaleString()}</td>
-                    <td>${Number(h.avg_price).toLocaleString()}</td>
-                    <td>{prices[h.symbol] ? `$${prices[h.symbol].toLocaleString()}` : '—'}</td>
+                    <td>{fmt(h.avg_price)}</td>
+                    <td>{prices[h.symbol] ? fmt(prices[h.symbol]) : '—'}</td>
                     <td className={info ? (isPos ? 'up' : 'down') : ''}>
-                      {info ? `${isPos ? '+' : ''}$${info.amount.toFixed(2)}` : '—'}
+                      {info ? fmtProfit(info.usdAmount) : '—'}
                     </td>
                     <td className={info ? (isPos ? 'up' : 'down') : ''}>
-                      {info ? `${isPos ? '+' : ''}${info.rate.toFixed(2)}%` : '—'}
+                      {info ? `${isPos ? '+' : ''}${info.pct.toFixed(2)}%` : '—'}
                     </td>
                   </tr>
                 );
@@ -133,7 +162,7 @@ export default function Dashboard() {
                 return (
                   <tr key={w.symbol}>
                     <td><Link to={`/market?symbol=${w.symbol}`}>{w.symbol}</Link></td>
-                    <td>{q ? `$${q.price.toLocaleString()}` : '—'}</td>
+                    <td>{q ? fmt(q.price) : '—'}</td>
                     <td className={q ? (isPos ? 'up' : 'down') : ''}>
                       {q ? `${isPos ? '▲' : '▼'} ${q.changePercent}` : '—'}
                     </td>

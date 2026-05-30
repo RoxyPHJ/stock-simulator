@@ -63,3 +63,6 @@ export const getCandles = (symbol) => api.get(`/stocks/${symbol}/candles`);
 export const getWatchlist    = ()       => api.get('/watchlist');
 export const addWatchlist    = (symbol) => api.post('/watchlist', { symbol });
 export const removeWatchlist = (symbol) => api.delete(`/watchlist/${symbol}`);
+
+// ─── Exchange Rate ───────────────────────────────────
+export const getExchangeRate = () => api.get('/exchange');

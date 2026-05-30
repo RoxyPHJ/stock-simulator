@@ -111,6 +111,7 @@ input:focus { outline: none; border-color: #58a6ff; }
 }
 .balance-card span { color: #8b949e; font-size: 14px; }
 .balance-card strong { font-size: 26px; color: #58a6ff; }
+.balance-usd { font-size: 16px; color: #8b949e; font-weight: 400; margin-left: 6px; }
 
 /* ── Tables ─────────────────────────────────────── */
 .section { margin-bottom: 32px; }
@@ -122,6 +123,29 @@ input:focus { outline: none; border-color: #58a6ff; }
   color: #8b949e;
   margin-bottom: 12px;
 }
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.section-header h3 { margin-bottom: 0; }
+
+.currency-toggle {
+  display: flex;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.currency-toggle button {
+  padding: 4px 12px;
+  background: transparent;
+  border: none;
+  color: #8b949e;
+  cursor: pointer;
+  font-size: 12px;
+}
+.currency-toggle button.active { background: #1f6feb; color: #fff; }
 
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { padding: 10px 12px; border-bottom: 1px solid #21262d; text-align: left; }
