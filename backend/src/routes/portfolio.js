@@ -1,5 +1,4 @@
 const router = require('express').Router();
-const axios = require('axios');
 const { pool } = require('../db');
 const auth = require('../middleware/auth');
 const { getLastMockPrice } = require('../mock');
@@ -7,17 +6,9 @@ const { getLastMockPrice } = require('../mock');
 router.use(auth);
 
 async function fetchPrice(symbol) {
-  const { data } = await axios.get('https://www.alphavantage.co/query', {
-    params: { function: 'GLOBAL_QUOTE', symbol, apikey: process.env.ALPHA_VANTAGE_API_KEY },
-  });
-  const price = parseFloat(data['Global Quote']?.['05. price']);
-  if (!price) {
-    // rate limit → 차트와 동일한 DB 기준 마지막 종가 사용
-    const mock = await getLastMockPrice(symbol, pool);
-    if (mock) return mock.price;
-    throw new Error(`Symbol not found: ${symbol}`);
-  }
-  return price;
+  const mock = await getLastMockPrice(symbol, pool);
+  if (mock) return mock.price;
+  throw new Error(`Symbol not found: ${symbol}`);
 }
 
 // 포트폴리오 + 잔고 조회

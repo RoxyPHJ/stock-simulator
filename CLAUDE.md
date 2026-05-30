@@ -4,23 +4,23 @@
 
 "필요없는 코드 보고해" 요청 시 아래 형식을 따른다.
 
-### 보고 형식
+### Report Format
 
-1. **발견된 항목** — 파일 경로와 줄 번호, 코드 이름 명시
-2. **무슨 기능인가** — 해당 코드가 원래 하는 일 한 줄 요약
-3. **왜 만들어졌나** — 도입 당시 필요했던 이유
-4. **왜 지금 필요없나** — 어떤 변경으로 인해 더 이상 호출/참조되지 않는지
-5. **이상 없는 코드 목록** — 검토했으나 문제없는 파일 표로 정리
+1. **Item found** — file path, line number(s), and name of the code
+2. **What it does** — one-line summary of what the code originally does
+3. **Why it was created** — the reason it was introduced
+4. **Why it is no longer needed** — which change removed all call/reference paths to it
+5. **Code confirmed clean** — a table of files reviewed but found to have no issues
 
-### 판단 기준
+### Criteria for Reporting
 
-- import했으나 사용하지 않는 심볼
-- export했으나 어디서도 import하지 않는 함수/변수
-- 다른 코드로 대체되어 호출 경로가 사라진 함수
-- 데이터 구조 안에서 해당 함수만 참조하던 필드
+- Symbols that are imported but never used
+- Functions or variables that are exported but never imported anywhere
+- Functions whose only call sites were removed by another change
+- Fields in a data structure that were only referenced by dead code
 
-### 주의 사항
+### Rules
 
-- 단순히 "더 나은 방식이 있다"는 이유로 보고하지 않는다.
-- 실제로 호출/참조 경로가 없는 경우에만 보고한다.
-- 삭제 실행은 사용자 확인 후 진행한다.
+- Do not report code just because a better approach exists.
+- Only report code that has no reachable call or reference path.
+- Do not execute deletions until the user confirms.
